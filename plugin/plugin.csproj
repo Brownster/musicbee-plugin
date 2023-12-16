@@ -5,7 +5,7 @@
     <AssemblyName>mb_MyPlugin</AssemblyName>    <!-- This is the name of the DLL file -->
     <AssemblyTitle>MyPlugin</AssemblyTitle>    <!-- This is the title of the plugin AND DLL -->
     <Company>iSplasher</Company>    <!-- This is the name of the author -->
-    <Description>Created from github.com/iSplasher/musicbee-plugin-template</Description>    <!-- This is the description of the plugin AND DLL -->
+<Description>Created from https://github.com/iSplasher/musicbee-plugin</Description><!-- This is the description of the plugin AND DLL -->
   </PropertyGroup>
 
   <!-- CUSTOM PROPERTIES (referenced in tasks below) -->
