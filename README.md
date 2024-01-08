@@ -33,8 +33,11 @@ To only build the plugin, run the following command:
 - `dotnet build plugin/plugin.csproj`
 
     This will create a `plugin/bin/Debug/net4.8-windows/mb_[PluginName].dll` file.
+    
     For convenience, the plugin DLL and its dependencies are copied to the `build/out` folder and zipped into `build/[PluginName].zip`.
+
     Additionally, if `CopyToProgram` in `plugin/plugin.csproj` is set to `true`, the plugin is copied to the MusicBee plugin folder specified in the `plugin/plugin.csproj` file.
+
     The MusicBee application will automatically get restarted during this process.
     Console output will then be displayed in the terminal.
 
