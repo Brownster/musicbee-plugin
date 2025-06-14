@@ -155,6 +155,7 @@
   <!-- DEPENDENCIES -->
 
   <ItemGroup>
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
 

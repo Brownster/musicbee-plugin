@@ -103,6 +103,7 @@ namespace MusicBeePlugin
 
         private MusicBeeApiInterface mbApiInterface;
         private PluginInfo about = new PluginInfo();
+        private MbPiConnector connector;
 
         public PluginInfo Initialise(IntPtr apiInterfacePtr)
         {
@@ -117,6 +118,9 @@ namespace MusicBeePlugin
 
             mbApiInterface = new MusicBeeApiInterface();
             mbApiInterface.Initialise(apiInterfacePtr);
+            connector = new MbPiConnector("http://localhost:8000");
+            // add menu item under the playing track context menu
+            mbApiInterface.MB_AddMenuItem("mnuContext/Send to iPod", null, OnSendToIpod);
             about.PluginInfoVersion = PluginInfoVersion;
             about.Name = name;
             about.Description = description;
@@ -256,5 +260,22 @@ namespace MusicBeePlugin
         //    TextRenderer.DrawText(e.Graphics, "hello", SystemFonts.CaptionFont, new Point(10, 10), Color.Blue);
         //}
 
-    }
+        private async void OnSendToIpod(object sender, EventArgs e)
+        {
+            try
+            {
+                string file = mbApiInterface.NowPlaying_GetFileUrl();
+                if (!string.IsNullOrEmpty(file))
+                {
+                    await connector.UploadFileAsync(file);
+                }
+            }
+            catch (Exception ex)
+            {
+                mbApiInterface.MB_Trace("Send to iPod failed: " + ex.Message);
+            }
+        }
+
+     }
 }
+
