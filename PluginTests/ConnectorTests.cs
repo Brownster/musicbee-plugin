@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MusicBeePlugin;
@@ -12,9 +13,11 @@ namespace PluginTests
     class StubHandler : HttpMessageHandler
     {
         public HttpResponseMessage Response { get; set; } = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("ok") };
+        public HttpRequestMessage? LastRequest { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            LastRequest = request;
             return Task.FromResult(Response);
         }
     }
@@ -98,6 +101,23 @@ namespace PluginTests
             connector.UploadFailed += (s, e) => raised = true;
             await Assert.ThrowsAsync<FileNotFoundException>(() => connector.UploadFileAsync(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())));
             Assert.False(raised);
+        }
+
+        [Fact]
+        public async Task ApiKeyHeaderIsAddedWhenProvided()
+        {
+            var handler = new StubHandler();
+            var client = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+            var connector = new MbPiConnector("http://localhost", "secret");
+            typeof(MbPiConnector).GetField("_client", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(connector, client);
+
+            var temp = Path.GetTempFileName();
+            File.WriteAllText(temp, "data");
+            await connector.UploadFileAsync(temp);
+
+            Assert.NotNull(handler.LastRequest);
+            Assert.True(handler.LastRequest!.Headers.Contains("X-Api-Key"));
+            Assert.Equal("secret", handler.LastRequest!.Headers.GetValues("X-Api-Key").First());
         }
     }
 }

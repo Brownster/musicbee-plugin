@@ -107,6 +107,7 @@ namespace MusicBeePlugin
         private FileUploadQueue uploadQueue;
         private PluginSettingsManager settingsManager;
         private TextBox endpointTextBox;
+        private TextBox apiKeyTextBox;
         private int uploadTotal;
         private int uploadCompleted;
 
@@ -117,7 +118,8 @@ namespace MusicBeePlugin
         {
             uploadQueue?.Dispose();
             connector?.Dispose();
-            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
+            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl,
+                settingsManager.Settings.ApiKey);
             uploadQueue = new FileUploadQueue(connector);
             uploadQueue.UploadStarted += (s, path) =>
                 mbApiInterface.MB_SetBackgroundTaskMessage($"Uploading {Path.GetFileName(path)} ({uploadCompleted + 1}/{uploadTotal})");
@@ -191,7 +193,9 @@ namespace MusicBeePlugin
                 Panel configPanel = (Panel)Panel.FromHandle(panelHandle);
                 Label prompt = new Label { AutoSize = true, Location = new Point(0, 0), Text = "Endpoint URL:" };
                 endpointTextBox = new TextBox { Bounds = new Rectangle(90, 0, 200, 20), Text = settingsManager.Settings.EndpointUrl };
-                configPanel.Controls.AddRange(new Control[] { prompt, endpointTextBox });
+                Label keyLabel = new Label { AutoSize = true, Location = new Point(0, 30), Text = "API Key:" };
+                apiKeyTextBox = new TextBox { Bounds = new Rectangle(90, 30, 200, 20), Text = settingsManager.Settings.ApiKey };
+                configPanel.Controls.AddRange(new Control[] { prompt, endpointTextBox, keyLabel, apiKeyTextBox });
             }
             else
             {
@@ -201,13 +205,15 @@ namespace MusicBeePlugin
                     dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
                     dlg.StartPosition = FormStartPosition.CenterParent;
                     dlg.Width = 350;
-                    dlg.Height = 120;
+                    dlg.Height = 160;
 
                     Label prompt = new Label { AutoSize = true, Location = new Point(10, 10), Text = "Endpoint URL:" };
                     endpointTextBox = new TextBox { Location = new Point(110, 8), Width = 200, Text = settingsManager.Settings.EndpointUrl };
-                    Button ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(110, 40) };
-                    Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(200, 40) };
-                    dlg.Controls.AddRange(new Control[] { prompt, endpointTextBox, ok, cancel });
+                    Label keyLabel = new Label { AutoSize = true, Location = new Point(10, 40), Text = "API Key:" };
+                    apiKeyTextBox = new TextBox { Location = new Point(110, 38), Width = 200, Text = settingsManager.Settings.ApiKey };
+                    Button ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(110, 70) };
+                    Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(200, 70) };
+                    dlg.Controls.AddRange(new Control[] { prompt, endpointTextBox, keyLabel, apiKeyTextBox, ok, cancel });
                     dlg.AcceptButton = ok;
                     dlg.CancelButton = cancel;
 
@@ -228,6 +234,8 @@ namespace MusicBeePlugin
                 settingsManager = new PluginSettingsManager(mbApiInterface.Setting_GetPersistentStoragePath());
             if (endpointTextBox != null)
                 settingsManager.Settings.EndpointUrl = endpointTextBox.Text;
+            if (apiKeyTextBox != null)
+                settingsManager.Settings.ApiKey = apiKeyTextBox.Text;
 
             settingsManager.Save();
 

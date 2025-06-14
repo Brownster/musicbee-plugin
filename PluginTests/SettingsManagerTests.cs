@@ -16,10 +16,12 @@ namespace PluginTests
             {
                 var manager = new PluginSettingsManager(tempDir);
                 manager.Settings.EndpointUrl = "http://example.com";
+                manager.Settings.ApiKey = "secret";
                 manager.Save();
 
                 var manager2 = new PluginSettingsManager(tempDir);
                 Assert.Equal("http://example.com", manager2.Settings.EndpointUrl);
+                Assert.Equal("secret", manager2.Settings.ApiKey);
             }
             finally
             {
@@ -36,6 +38,7 @@ namespace PluginTests
             {
                 var manager = new PluginSettingsManager(tempDir);
                 Assert.Equal("http://localhost:8000", manager.Settings.EndpointUrl);
+                Assert.Equal(string.Empty, manager.Settings.ApiKey);
             }
             finally
             {
