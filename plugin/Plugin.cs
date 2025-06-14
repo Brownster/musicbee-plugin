@@ -107,6 +107,15 @@ namespace MusicBeePlugin
         private PluginSettingsManager settingsManager;
         private TextBox endpointTextBox;
 
+        /// <summary>
+        /// Create the connector using the currently loaded settings.
+        /// </summary>
+        private void CreateConnector()
+        {
+            connector?.Dispose();
+            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
+        }
+
         public PluginInfo Initialise(IntPtr apiInterfacePtr)
         {
             Assembly thisAssem = typeof(Plugin).Assembly;
@@ -121,7 +130,7 @@ namespace MusicBeePlugin
             mbApiInterface = new MusicBeeApiInterface();
             mbApiInterface.Initialise(apiInterfacePtr);
             settingsManager = new PluginSettingsManager(mbApiInterface.Setting_GetPersistentStoragePath());
-            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
+            CreateConnector();
             // add menu item under the playing track context menu
             mbApiInterface.MB_AddMenuItem("mnuContext/Send to iPod", null, OnSendToIpod);
             about.PluginInfoVersion = PluginInfoVersion;
@@ -191,8 +200,7 @@ namespace MusicBeePlugin
 
             settingsManager.Save();
 
-            connector?.Dispose();
-            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
+            CreateConnector();
         }
 
         // MusicBee is closing the plugin (plugin is being disabled by user or MusicBee is shutting down)
