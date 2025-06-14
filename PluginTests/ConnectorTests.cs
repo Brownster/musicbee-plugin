@@ -119,5 +119,21 @@ namespace PluginTests
             Assert.True(handler.LastRequest!.Headers.Contains("X-Api-Key"));
             Assert.Equal("secret", handler.LastRequest!.Headers.GetValues("X-Api-Key").First());
         }
+
+        [Fact]
+        public async Task CategoryAppendedToUrl()
+        {
+            var handler = new StubHandler();
+            var client = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+            var connector = new MbPiConnector("http://localhost");
+            typeof(MbPiConnector).GetField("_client", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(connector, client);
+
+            var temp = Path.GetTempFileName();
+            File.WriteAllText(temp, "data");
+            await connector.UploadFileAsync(temp, "podcast");
+
+            Assert.NotNull(handler.LastRequest);
+            Assert.EndsWith("/upload/podcast", handler.LastRequest!.RequestUri!.AbsoluteUri);
+        }
     }
 }

@@ -10,8 +10,20 @@ namespace MusicBeePlugin
     public class FileUploadQueue : IDisposable
     {
         private readonly MbPiConnector _connector;
-        private readonly Queue<string> _queue = new Queue<string>();
+        private readonly Queue<UploadItem> _queue = new Queue<UploadItem>();
         private bool _processing;
+
+        private struct UploadItem
+        {
+            public string Path { get; }
+            public string? Category { get; }
+
+            public UploadItem(string path, string? category)
+            {
+                Path = path;
+                Category = category;
+            }
+        }
 
         public event EventHandler<string> UploadStarted;
         public event EventHandler<UploadCompletedEventArgs> UploadCompleted;
@@ -24,14 +36,14 @@ namespace MusicBeePlugin
             _connector.UploadFailed += (s, e) => UploadFailed?.Invoke(this, e);
         }
 
-        public void Enqueue(string path)
+        public void Enqueue(string path, string? category = null)
         {
             if (string.IsNullOrEmpty(path))
                 throw new ArgumentException("path is required", nameof(path));
 
             lock (_queue)
             {
-                _queue.Enqueue(path);
+                _queue.Enqueue(new UploadItem(path, category));
                 if (!_processing)
                 {
                     _processing = true;
@@ -44,7 +56,7 @@ namespace MusicBeePlugin
         {
             while (true)
             {
-                string next;
+                UploadItem next;
                 lock (_queue)
                 {
                     if (_queue.Count == 0)
@@ -57,8 +69,8 @@ namespace MusicBeePlugin
 
                 try
                 {
-                    UploadStarted?.Invoke(this, next);
-                    await _connector.UploadFileAsync(next).ConfigureAwait(false);
+                    UploadStarted?.Invoke(this, next.Path);
+                    await _connector.UploadFileAsync(next.Path, next.Category).ConfigureAwait(false);
                 }
                 catch
                 {

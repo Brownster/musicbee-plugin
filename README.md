@@ -45,6 +45,7 @@ This requires a .NET SDK with Windows desktop support because the plugin targets
 
 When loaded in MusicBee the plugin exposes a settings panel where the Raspberry Pi endpoint URL and optional API key can be set.
 Uploads are queued and performed sequentially. Multiple selected tracks can be sent in a single action and a status message within MusicBee shows progress.
+The plugin maps the MusicBee **Kind** tag to API categories (music, podcast or audiobook) so files are automatically organised on the Pi.
 Errors and completion notices are logged and also shown via notifications.
 
 ## Roadmap
