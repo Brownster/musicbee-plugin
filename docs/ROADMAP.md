@@ -25,8 +25,8 @@ This roadmap outlines the steps needed to transform this template into a plugin 
 ## 4. Context Menu Integration
 
 1. Use `mbApiInterface.MB_AddMenuItem` (via `MB_AddMenuItemDelegate`) to add a **"Send to iPod"** item in the track and album context menus.
-2. When triggered, obtain the file paths of the selected tracks using the API methods in `MusicBeeInterface.cs`.
-3. Pass the paths to the connector library for upload.
+2. When triggered, obtain the file paths of the selected tracks using `Library_QueryFilesEx` ("domain=SelectedFiles") from `MusicBeeInterface.cs`.
+3. Pass the paths to the connector library for upload; multiple selections should enqueue all chosen files.
 
 ## 5. File Transfer Logic
 
@@ -36,8 +36,8 @@ This roadmap outlines the steps needed to transform this template into a plugin 
 
 ## 6. Feedback to the User
 
-1. Display a status message or progress bar in MusicBee while transfers are active.
-2. Consider using MusicBee's notification API to show success or failure messages.
+1. Display a status message or progress bar in MusicBee while transfers are active. Use `MB_SetBackgroundTaskMessage` to update progress for each file.
+2. Use MusicBee's notification API via `MB_SendNotification` to show success or failure messages in addition to logging.
 
 ## 7. Testing and Debugging
 
