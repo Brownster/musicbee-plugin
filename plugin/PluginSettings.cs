@@ -4,8 +4,8 @@ namespace MusicBeePlugin
 {
     /// <summary>
     /// Represents user configurable plugin settings.
-    /// Currently only the endpoint URL is stored but more
-    /// fields may be added in future versions.
+    /// Currently the endpoint URL and API key are stored but
+    /// more fields may be added in future versions.
     /// </summary>
     [DataContract]
     public class PluginSettings
@@ -15,5 +15,11 @@ namespace MusicBeePlugin
         /// </summary>
         [DataMember(Name = "endpointUrl")]
         public string EndpointUrl { get; set; } = "http://localhost:8000";
+
+        /// <summary>
+        /// Optional API key sent with each request.
+        /// </summary>
+        [DataMember(Name = "apiKey")]
+        public string ApiKey { get; set; } = "";
     }
 }

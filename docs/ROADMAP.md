@@ -30,7 +30,7 @@ This roadmap outlines the steps needed to transform this template into a plugin 
 
 ## 5. File Transfer Logic
 
-1. Implement HTTP POST requests in `MbPiConnector` to send files to the Raspberry Pi API.
+1. Implement HTTP POST requests in `MbPiConnector` to send files to the Raspberry Pi API, including an optional API key header for authentication.
 2. Add progress reporting and error handling (e.g., via events or callbacks) so the MusicBee UI can display status.
 3. Provide a way to queue multiple tracks for transfer to avoid blocking the UI thread.
 

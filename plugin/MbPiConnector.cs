@@ -41,18 +41,25 @@ namespace MusicBeePlugin
     public class MbPiConnector : IDisposable
     {
         private readonly HttpClient _client;
+        private readonly string _apiKey;
 
         public event EventHandler<UploadCompletedEventArgs> UploadCompleted;
         public event EventHandler<UploadFailedEventArgs> UploadFailed;
 
         /// <summary>
         /// Create a connector with the given base url, e.g. "http://pi:8000".
+        /// An optional API key will be sent with each request.
         /// </summary>
-        public MbPiConnector(string baseUrl)
+        public MbPiConnector(string baseUrl, string apiKey = null)
         {
             if (string.IsNullOrEmpty(baseUrl))
                 throw new ArgumentException("baseUrl is required", nameof(baseUrl));
             _client = new HttpClient { BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/") };
+            _apiKey = apiKey ?? string.Empty;
+            if (!string.IsNullOrEmpty(_apiKey))
+            {
+                _client.DefaultRequestHeaders.Add("X-Api-Key", _apiKey);
+            }
         }
 
         public void Dispose()
