@@ -44,7 +44,8 @@ This requires a .NET SDK with Windows desktop support because the plugin targets
 ## Configuration
 
 When loaded in MusicBee the plugin exposes a settings panel where the Raspberry Pi endpoint URL can be set.
-Uploads are queued and performed sequentially; progress and errors are printed to the MusicBee trace log.
+Uploads are queued and performed sequentially. Multiple selected tracks can be sent in a single action and a status message within MusicBee shows progress.
+Errors and completion notices are logged and also shown via notifications.
 
 ## Roadmap
 

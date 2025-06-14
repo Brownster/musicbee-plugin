@@ -107,6 +107,8 @@ namespace MusicBeePlugin
         private FileUploadQueue uploadQueue;
         private PluginSettingsManager settingsManager;
         private TextBox endpointTextBox;
+        private int uploadTotal;
+        private int uploadCompleted;
 
         /// <summary>
         /// Create the connector using the currently loaded settings.
@@ -117,10 +119,32 @@ namespace MusicBeePlugin
             connector?.Dispose();
             connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
             uploadQueue = new FileUploadQueue(connector);
+            uploadQueue.UploadStarted += (s, path) =>
+                mbApiInterface.MB_SetBackgroundTaskMessage($"Uploading {Path.GetFileName(path)} ({uploadCompleted + 1}/{uploadTotal})");
             uploadQueue.UploadCompleted += (s, e) =>
+            {
+                uploadCompleted++;
+                mbApiInterface.MB_SetBackgroundTaskMessage($"Uploaded {uploadCompleted}/{uploadTotal}: {Path.GetFileName(e.FilePath)}");
+                mbApiInterface.MB_SendNotification(CallbackType.FilesRetrievedChanged);
+                if (uploadCompleted == uploadTotal)
+                {
+                    mbApiInterface.MB_SetBackgroundTaskMessage("Uploads complete");
+                    uploadTotal = uploadCompleted = 0;
+                }
                 mbApiInterface.MB_Trace($"Uploaded {e.FilePath}: {e.Response}");
+            };
             uploadQueue.UploadFailed += (s, e) =>
+            {
+                uploadCompleted++;
+                mbApiInterface.MB_SetBackgroundTaskMessage($"Failed {uploadCompleted}/{uploadTotal}: {Path.GetFileName(e.FilePath)}");
+                mbApiInterface.MB_SendNotification(CallbackType.FilesRetrievedFail);
+                if (uploadCompleted == uploadTotal)
+                {
+                    mbApiInterface.MB_SetBackgroundTaskMessage("Uploads complete");
+                    uploadTotal = uploadCompleted = 0;
+                }
                 mbApiInterface.MB_Trace($"Upload failed for {e.FilePath}: {e.Error.Message}");
+            };
         }
 
         public PluginInfo Initialise(IntPtr apiInterfacePtr)
@@ -307,10 +331,25 @@ namespace MusicBeePlugin
         {
             try
             {
-                string file = mbApiInterface.NowPlaying_GetFileUrl();
-                if (!string.IsNullOrEmpty(file))
+                string[] files;
+                if (mbApiInterface.Library_QueryFilesEx("domain=SelectedFiles", out files) && files.Length > 0)
                 {
-                    uploadQueue.Enqueue(file);
+                    foreach (var f in files)
+                    {
+                        uploadQueue.Enqueue(f);
+                    }
+                    uploadTotal += files.Length;
+                    mbApiInterface.MB_SetBackgroundTaskMessage($"Queued {uploadTotal - uploadCompleted} file(s) for upload");
+                }
+                else
+                {
+                    string file = mbApiInterface.NowPlaying_GetFileUrl();
+                    if (!string.IsNullOrEmpty(file))
+                    {
+                        uploadQueue.Enqueue(file);
+                        uploadTotal++;
+                        mbApiInterface.MB_SetBackgroundTaskMessage($"Queued {uploadTotal - uploadCompleted} file(s) for upload");
+                    }
                 }
             }
             catch (Exception ex)

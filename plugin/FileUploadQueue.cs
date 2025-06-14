@@ -13,6 +13,7 @@ namespace MusicBeePlugin
         private readonly Queue<string> _queue = new Queue<string>();
         private bool _processing;
 
+        public event EventHandler<string> UploadStarted;
         public event EventHandler<UploadCompletedEventArgs> UploadCompleted;
         public event EventHandler<UploadFailedEventArgs> UploadFailed;
 
@@ -56,6 +57,7 @@ namespace MusicBeePlugin
 
                 try
                 {
+                    UploadStarted?.Invoke(this, next);
                     await _connector.UploadFileAsync(next).ConfigureAwait(false);
                 }
                 catch
