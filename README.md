@@ -1,6 +1,7 @@
 # MusicBee Raspberry Pi Sync Plugin
 
-This repository hosts a MusicBee plugin for sending tracks to a Raspberry Pi running an iPod Classic‑style interface.
+This repository hosts a MusicBee plugin for sending tracks to a Raspberry Pi running  https://github.com/Brownster/ipod-dock
+connected to an iPod Classic via usb. /Brownster/ipod-dock exposes api to upload and managed files the pi manages the syncing to the ipod
 The code started as a small template and now includes a working uploader, simple configuration UI and unit tests.
 
 See the [MusicBee API](https://getmusicbee.com/help/api/) for details about plugin development.
