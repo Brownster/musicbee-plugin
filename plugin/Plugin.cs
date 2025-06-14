@@ -104,6 +104,8 @@ namespace MusicBeePlugin
         private MusicBeeApiInterface mbApiInterface;
         private PluginInfo about = new PluginInfo();
         private MbPiConnector connector;
+        private PluginSettingsManager settingsManager;
+        private TextBox endpointTextBox;
 
         public PluginInfo Initialise(IntPtr apiInterfacePtr)
         {
@@ -118,7 +120,8 @@ namespace MusicBeePlugin
 
             mbApiInterface = new MusicBeeApiInterface();
             mbApiInterface.Initialise(apiInterfacePtr);
-            connector = new MbPiConnector("http://localhost:8000");
+            settingsManager = new PluginSettingsManager(mbApiInterface.Setting_GetPersistentStoragePath());
+            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
             // add menu item under the playing track context menu
             mbApiInterface.MB_AddMenuItem("mnuContext/Send to iPod", null, OnSendToIpod);
             about.PluginInfoVersion = PluginInfoVersion;
@@ -140,31 +143,56 @@ namespace MusicBeePlugin
 
         public bool Configure(IntPtr panelHandle)
         {
-            // save any persistent settings in a sub-folder of this path
-            string dataPath = mbApiInterface.Setting_GetPersistentStoragePath();
-            // panelHandle will only be set if you set about.ConfigurationPanelHeight to a non-zero value
-            // keep in mind the panel width is scaled according to the font the user has selected
-            // if about.ConfigurationPanelHeight is set to 0, you can display your own popup window
+            if (settingsManager == null)
+                settingsManager = new PluginSettingsManager(mbApiInterface.Setting_GetPersistentStoragePath());
+
             if (panelHandle != IntPtr.Zero)
             {
                 Panel configPanel = (Panel)Panel.FromHandle(panelHandle);
-                Label prompt = new Label();
-                prompt.AutoSize = true;
-                prompt.Location = new Point(0, 0);
-                prompt.Text = "prompt:";
-                TextBox textBox = new TextBox();
-                textBox.Bounds = new Rectangle(60, 0, 100, textBox.Height);
-                configPanel.Controls.AddRange(new Control[] { prompt, textBox });
+                Label prompt = new Label { AutoSize = true, Location = new Point(0, 0), Text = "Endpoint URL:" };
+                endpointTextBox = new TextBox { Bounds = new Rectangle(90, 0, 200, 20), Text = settingsManager.Settings.EndpointUrl };
+                configPanel.Controls.AddRange(new Control[] { prompt, endpointTextBox });
+            }
+            else
+            {
+                using (Form dlg = new Form())
+                {
+                    dlg.Text = "Plugin Settings";
+                    dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                    dlg.StartPosition = FormStartPosition.CenterParent;
+                    dlg.Width = 350;
+                    dlg.Height = 120;
+
+                    Label prompt = new Label { AutoSize = true, Location = new Point(10, 10), Text = "Endpoint URL:" };
+                    endpointTextBox = new TextBox { Location = new Point(110, 8), Width = 200, Text = settingsManager.Settings.EndpointUrl };
+                    Button ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(110, 40) };
+                    Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(200, 40) };
+                    dlg.Controls.AddRange(new Control[] { prompt, endpointTextBox, ok, cancel });
+                    dlg.AcceptButton = ok;
+                    dlg.CancelButton = cancel;
+
+                    if (dlg.ShowDialog() == DialogResult.OK)
+                    {
+                        SaveSettings();
+                    }
+                }
             }
             return false;
         }
-       
+
         // called by MusicBee when the user clicks Apply or Save in the MusicBee Preferences screen.
         // its up to you to figure out whether anything has changed and needs updating
         public void SaveSettings()
         {
-            // save any persistent settings in a sub-folder of this path
-            string dataPath = mbApiInterface.Setting_GetPersistentStoragePath();
+            if (settingsManager == null)
+                settingsManager = new PluginSettingsManager(mbApiInterface.Setting_GetPersistentStoragePath());
+            if (endpointTextBox != null)
+                settingsManager.Settings.EndpointUrl = endpointTextBox.Text;
+
+            settingsManager.Save();
+
+            connector?.Dispose();
+            connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
         }
 
         // MusicBee is closing the plugin (plugin is being disabled by user or MusicBee is shutting down)
