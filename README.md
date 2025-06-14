@@ -58,3 +58,9 @@ To build the plugin and the console application, run the following command:
 ## Contributing
 
 If you have any suggestions or improvements, feel free to open an issue or a pull request.
+
+## Roadmap
+
+The high level development plan for turning this template into a working plugin lives in
+[`docs/ROADMAP.md`](docs/ROADMAP.md). It outlines the proposed architecture,
+steps for adding menu items and network code, and ideas for future enhancements.
