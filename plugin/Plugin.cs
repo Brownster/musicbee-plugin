@@ -104,6 +104,7 @@ namespace MusicBeePlugin
         private MusicBeeApiInterface mbApiInterface;
         private PluginInfo about = new PluginInfo();
         private MbPiConnector connector;
+        private FileUploadQueue uploadQueue;
         private PluginSettingsManager settingsManager;
         private TextBox endpointTextBox;
 
@@ -112,8 +113,14 @@ namespace MusicBeePlugin
         /// </summary>
         private void CreateConnector()
         {
+            uploadQueue?.Dispose();
             connector?.Dispose();
             connector = new MbPiConnector(settingsManager.Settings.EndpointUrl);
+            uploadQueue = new FileUploadQueue(connector);
+            uploadQueue.UploadCompleted += (s, e) =>
+                mbApiInterface.MB_Trace($"Uploaded {e.FilePath}: {e.Response}");
+            uploadQueue.UploadFailed += (s, e) =>
+                mbApiInterface.MB_Trace($"Upload failed for {e.FilePath}: {e.Error.Message}");
         }
 
         public PluginInfo Initialise(IntPtr apiInterfacePtr)
@@ -296,14 +303,14 @@ namespace MusicBeePlugin
         //    TextRenderer.DrawText(e.Graphics, "hello", SystemFonts.CaptionFont, new Point(10, 10), Color.Blue);
         //}
 
-        private async void OnSendToIpod(object sender, EventArgs e)
+        private void OnSendToIpod(object sender, EventArgs e)
         {
             try
             {
                 string file = mbApiInterface.NowPlaying_GetFileUrl();
                 if (!string.IsNullOrEmpty(file))
                 {
-                    await connector.UploadFileAsync(file);
+                    uploadQueue.Enqueue(file);
                 }
             }
             catch (Exception ex)

@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MusicBeePlugin
@@ -9,9 +8,42 @@ namespace MusicBeePlugin
     /// <summary>
     /// Simple client for the Raspberry Pi iPod sync API.
     /// </summary>
+    /// <summary>
+    /// Event args for a successful upload.
+    /// </summary>
+    public class UploadCompletedEventArgs : EventArgs
+    {
+        public string FilePath { get; }
+        public string Response { get; }
+
+        public UploadCompletedEventArgs(string filePath, string response)
+        {
+            FilePath = filePath;
+            Response = response;
+        }
+    }
+
+    /// <summary>
+    /// Event args for a failed upload.
+    /// </summary>
+    public class UploadFailedEventArgs : EventArgs
+    {
+        public string FilePath { get; }
+        public Exception Error { get; }
+
+        public UploadFailedEventArgs(string filePath, Exception error)
+        {
+            FilePath = filePath;
+            Error = error;
+        }
+    }
+
     public class MbPiConnector : IDisposable
     {
         private readonly HttpClient _client;
+
+        public event EventHandler<UploadCompletedEventArgs> UploadCompleted;
+        public event EventHandler<UploadFailedEventArgs> UploadFailed;
 
         /// <summary>
         /// Create a connector with the given base url, e.g. "http://pi:8000".
@@ -31,21 +63,31 @@ namespace MusicBeePlugin
         /// <summary>
         /// Upload a file to the Pi. Category can be "music" or "audiobook".
         /// </summary>
-        public async Task<string> UploadFileAsync(string path, string category = null)
+        public virtual async Task<string> UploadFileAsync(string path, string category = null)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 throw new FileNotFoundException("File not found", path);
 
-            using (var content = new MultipartFormDataContent())
+            try
             {
-                var fileContent = new ByteArrayContent(File.ReadAllBytes(path));
-                var fileName = Path.GetFileName(path);
-                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-                content.Add(fileContent, "file", fileName);
-                var url = string.IsNullOrEmpty(category) ? "upload" : $"upload/{category}";
-                var response = await _client.PostAsync(url, content).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                using (var content = new MultipartFormDataContent())
+                {
+                    var fileContent = new ByteArrayContent(File.ReadAllBytes(path));
+                    var fileName = Path.GetFileName(path);
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                    content.Add(fileContent, "file", fileName);
+                    var url = string.IsNullOrEmpty(category) ? "upload" : $"upload/{category}";
+                    var response = await _client.PostAsync(url, content).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+                    var res = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    UploadCompleted?.Invoke(this, new UploadCompletedEventArgs(path, res));
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                UploadFailed?.Invoke(this, new UploadFailedEventArgs(path, ex));
+                throw;
             }
         }
 
