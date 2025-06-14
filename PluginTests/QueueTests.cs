@@ -22,6 +22,19 @@ namespace PluginTests
         }
     }
 
+    class CaptureConnector : MbPiConnector
+    {
+        public (string path, string? category)? Uploaded { get; private set; }
+        public CaptureConnector() : base("http://localhost") { }
+        public override async Task<string> UploadFileAsync(string path, string category = null)
+        {
+            await Task.Yield();
+            Uploaded = (path, category);
+            UploadCompleted?.Invoke(this, new UploadCompletedEventArgs(path, "ok"));
+            return "ok";
+        }
+    }
+
     public class QueueTests
     {
         [Fact]
@@ -47,6 +60,23 @@ namespace PluginTests
             await Task.WhenAll(t1.Task, t2.Task);
 
             Assert.Equal(new[] { "a", "b" }, log.ToArray());
+        }
+
+        [Fact]
+        public async Task CategoryIsPassedToConnector()
+        {
+            var connector = new CaptureConnector();
+            var queue = new FileUploadQueue(connector);
+
+            var tcs = new TaskCompletionSource<bool>();
+            queue.UploadCompleted += (s, e) => tcs.SetResult(true);
+
+            queue.Enqueue("foo.mp3", "podcast");
+
+            await tcs.Task;
+
+            Assert.NotNull(connector.Uploaded);
+            Assert.Equal(("foo.mp3", "podcast"), connector.Uploaded!.Value);
         }
     }
 }

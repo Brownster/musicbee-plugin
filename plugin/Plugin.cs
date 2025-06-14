@@ -344,7 +344,18 @@ namespace MusicBeePlugin
                 {
                     foreach (var f in files)
                     {
-                        uploadQueue.Enqueue(f);
+                        string kind = mbApiInterface.Library_GetFileProperty(f, FilePropertyType.Kind);
+                        string category = null;
+                        if (!string.IsNullOrEmpty(kind))
+                        {
+                            if (kind.Equals("Audiobook", StringComparison.OrdinalIgnoreCase))
+                                category = "audiobook";
+                            else if (kind.Equals("Podcast", StringComparison.OrdinalIgnoreCase))
+                                category = "podcast";
+                            else
+                                category = "music";
+                        }
+                        uploadQueue.Enqueue(f, category);
                     }
                     uploadTotal += files.Length;
                     mbApiInterface.MB_SetBackgroundTaskMessage($"Queued {uploadTotal - uploadCompleted} file(s) for upload");
@@ -354,7 +365,18 @@ namespace MusicBeePlugin
                     string file = mbApiInterface.NowPlaying_GetFileUrl();
                     if (!string.IsNullOrEmpty(file))
                     {
-                        uploadQueue.Enqueue(file);
+                        string kind = mbApiInterface.NowPlaying_GetFileProperty(FilePropertyType.Kind);
+                        string category = null;
+                        if (!string.IsNullOrEmpty(kind))
+                        {
+                            if (kind.Equals("Audiobook", StringComparison.OrdinalIgnoreCase))
+                                category = "audiobook";
+                            else if (kind.Equals("Podcast", StringComparison.OrdinalIgnoreCase))
+                                category = "podcast";
+                            else
+                                category = "music";
+                        }
+                        uploadQueue.Enqueue(file, category);
                         uploadTotal++;
                         mbApiInterface.MB_SetBackgroundTaskMessage($"Queued {uploadTotal - uploadCompleted} file(s) for upload");
                     }
