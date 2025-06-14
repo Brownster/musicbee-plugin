@@ -59,6 +59,7 @@ This roadmap outlines the steps needed to transform this template into a plugin 
 - Resume interrupted transfers.
 - Support playlists or entire libraries.
 - Add automatic syncing when new tracks are added in MusicBee.
+- Automatically categorise uploads using the track "Kind" tag.
 
 ---
 
