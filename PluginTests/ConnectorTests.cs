@@ -60,5 +60,44 @@ namespace PluginTests
             Assert.NotNull(args);
             Assert.Equal(temp, args!.FilePath);
         }
+
+        class ThrowHandler : HttpMessageHandler
+        {
+            public Exception ExceptionToThrow { get; set; } = new HttpRequestException();
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                return Task.FromException<HttpResponseMessage>(ExceptionToThrow);
+            }
+        }
+
+        [Fact]
+        public async Task UploadFileAsync_RequestException_RaisesFailedEvent()
+        {
+            var handler = new ThrowHandler { ExceptionToThrow = new HttpRequestException("fail") };
+            var client = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+            var connector = new MbPiConnector("http://localhost");
+            typeof(MbPiConnector).GetField("_client", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(connector, client);
+
+            var temp = Path.GetTempFileName();
+            File.WriteAllText(temp, "data");
+
+            UploadFailedEventArgs? args = null;
+            connector.UploadFailed += (s, e) => args = e;
+            await Assert.ThrowsAsync<HttpRequestException>(() => connector.UploadFileAsync(temp));
+
+            Assert.NotNull(args);
+            Assert.Equal(temp, args!.FilePath);
+            Assert.IsType<HttpRequestException>(args!.Error);
+        }
+
+        [Fact]
+        public async Task UploadFileAsync_MissingFile_Throws()
+        {
+            var connector = new MbPiConnector("http://localhost");
+            bool raised = false;
+            connector.UploadFailed += (s, e) => raised = true;
+            await Assert.ThrowsAsync<FileNotFoundException>(() => connector.UploadFileAsync(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())));
+            Assert.False(raised);
+        }
     }
 }
